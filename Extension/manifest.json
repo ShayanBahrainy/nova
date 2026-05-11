@@ -1,0 +1,14 @@
+{
+  "name": "Nova",
+  "description": "An extension for Veracross.",
+  "version": "1.0",
+  "manifest_version": 3,
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "html/index.html"
+  },
+  "host_permissions": ["https://*.veracross.com/*"],
+  "background": {
+    "service_worker": "js/service-worker.js"
+  }
+}
