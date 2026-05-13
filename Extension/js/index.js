@@ -33,9 +33,13 @@ window.addEventListener("DOMContentLoaded", async function () {
     }
 
 
-    const auth_data = await chrome.storage.local.get(["auth"]);
-    if (auth_data["authentication_key"] == undefined) {
-        console.log("sending message")
+    const data = await chrome.storage.local.get(["authenticationKey", "lastAuthenticated"]);
+    const now = Date.now() / 1000;
+
+    //Recover authentication if its less than 10 minutes ago
+    //So the user can close and reopen the extension as needed.
+    if (data["authenticationKey"] == undefined && !(data["lastAuthenticated"] != undefined && now - 10 * 60 < data["lastAuthenticated"])) {
+        console.log("Creating new authentication session...")
         chrome.runtime.sendMessage({type:"begin_authentication"}, (response) => {
             if (response.result == "Success") {
                 document.getElementById("email-code-label").value = message_templates['ENTER_CODE'].replace("{email}", response.email);
@@ -45,6 +49,13 @@ window.addEventListener("DOMContentLoaded", async function () {
                 console.error("Authentication attempted before Veracross login!");
             };
         })
+    }
+    else if (data["lastAuthenticated"] && now - 10 * 60 < data["lastAuthenticated"]) {
+        console.log("Resuming authentication session...")
+        const email = await chrome.storage.local.get(["lastEmail"]);
+
+        document.getElementById("email-code-label").value = message_templates['ENTER_CODE'].replace("{email}", email);
+        document.getElementById("verify-code").classList.toggle("invisible");
     }
 
 })

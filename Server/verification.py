@@ -41,7 +41,7 @@ class Verifier:
             return Verification(Verification.INVALID_EMAIL)
         
         if email_address in self.email_to_code and self.email_to_code[email_address] in self.requests:
-            del self.requests[email_address]
+            del self.requests[self.email_to_code[email_address]]
             del self.email_to_code[email_address]
 
         code = self.generate_code()
@@ -56,7 +56,7 @@ class Verifier:
 
         email["html"] = f"<p>Hello! <br> Your verification code for Nova is {code} <br> Thanks. </p>"
 
-        resend.Emails.send(email)
+        #resend.Emails.send(email)
 
         return Verification(Verification.CODE_SENT)
     

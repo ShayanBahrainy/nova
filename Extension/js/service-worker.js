@@ -130,7 +130,7 @@ function beginAuthentication() {
             const request = new Request(SERVER_BASE_URL + "/authenticate/",
                 {
                     method: "POST",
-                    
+
                     body: JSON.stringify({
                         content: text,
                     }),
@@ -140,14 +140,15 @@ function beginAuthentication() {
                     },
                 }
             )
-            console.log("senDING reQUEST")
-
 
             fetch(request).then(async function (response) {
-                console.log("sent reQUEST")
                 if (response.ok) {
                     const json = await response.json();
                     resolve(response.json["email"]);
+                    chrome.storage.local.set({
+                        lastAuthenticated: (Date.now() / 1000),
+                        lastEmail: response.json["email"],
+                    });
                 }
                 else {
                     console.error("Failed to begin authentication: " + response.status);
