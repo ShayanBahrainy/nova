@@ -1,6 +1,27 @@
-const message_templates = {
-    ENTER_CODE: "Please enter the code sent to {email}"
+const NUM_DIGITS = 6;
+
+let current_email;
+
+function submitEmailCode() {
+    let email_code = "";
+    for (let i = 1; i <= NUM_DIGITS; i++) {
+        const digit_element = document.getElementById("digit-" + i);
+        if (parseInt(digit_element.value) == NaN) return;
+        
+        email_code += digit_element.value;
+    }
+
+    chrome.runtime.sendMessage({type:"submit_code", code: email_code, email: current_email}, (response) => {
+        if (response.result == "AUTHENTICATED") {
+            document.getElementById("verify-code").classList.toggle("invisible");
+        }
+        else {
+            document.getElementById("verify-code-error").value = response.result;
+        }
+    });
+
 }
+
 window.addEventListener("DOMContentLoaded", async function () {
     chrome.runtime.sendMessage({type:"user_id"}, (response) => {
         if (response["result"] == "Success") {
@@ -27,8 +48,11 @@ window.addEventListener("DOMContentLoaded", async function () {
 
             const num = parseInt(element.id.split('-')[1]);
 
-            
-            document.getElementById('digit-' + Math.max(0, Math.min(num + direction, 6))).focus();
+            if (num == 6) {
+                submitEmailCode();
+            }
+
+            document.getElementById('digit-' + Math.max(0, Math.min(num + direction, NUM_DIGITS))).focus();
         })
     }
 
@@ -42,7 +66,8 @@ window.addEventListener("DOMContentLoaded", async function () {
         console.log("Creating new authentication session...")
         chrome.runtime.sendMessage({type:"begin_authentication"}, (response) => {
             if (response.result == "Success") {
-                document.getElementById("email-code-label").value = message_templates['ENTER_CODE'].replace("{email}", response.email);
+                current_email = response.email;
+                document.getElementById("email-code-label").innerText = `Please enter the code sent to ${current_email}`;
                 document.getElementById("verify-code").classList.toggle("invisible");
             }
             else if (response.result == "Failure" && response.reason == "LOGIN_NEEDED") {
@@ -52,9 +77,9 @@ window.addEventListener("DOMContentLoaded", async function () {
     }
     else if (data["lastAuthenticated"] && now - 10 * 60 < data["lastAuthenticated"]) {
         console.log("Resuming authentication session...")
-        const email = await chrome.storage.local.get(["lastEmail"]);
-
-        document.getElementById("email-code-label").value = message_templates['ENTER_CODE'].replace("{email}", email);
+        current_email = (await chrome.storage.local.get(["lastEmail"]))["lastEmail"];
+        console.log(current_email);
+        document.getElementById("email-code-label").innerText = `Please enter the code sent to ${current_email}`;
         document.getElementById("verify-code").classList.toggle("invisible");
     }
 

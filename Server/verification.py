@@ -56,18 +56,23 @@ class Verifier:
 
         email["html"] = f"<p>Hello! <br> Your verification code for Nova is {code} <br> Thanks. </p>"
 
-        #resend.Emails.send(email)
+        resend.Emails.send(email)
 
         return Verification(Verification.CODE_SENT)
     
     def complete_verification(self, code: str, email: str):
-        if code not in self.requests:
-            return Verification(Verification.NOT_FOUND)
+        if not self.requests.__contains__(code):
+            verification =  Verification(Verification.NOT_FOUND)
         if self.requests[code][0] != email:
-            return Verification(Verification.NOT_FOUND)
+            verification = Verification(Verification.NOT_FOUND)
+        if self.requests[code][1] - time.time() > 60 * 10:
+            verification = Verification(Verification.EXPIRED)
+            del self.requests[code]
+            del self.email_to_code[email]
+            return verification
+
+        verification = Verification(Verification.VERIFIED, self.requests[code][2], self.requests[code][3])
         del self.requests[code]
         del self.email_to_code[email]
-        if self.requests[code][1] - time.time() > 60 * 10:
-            return Verification(Verification.EXPIRED)
-        return Verification(Verification.VERIFIED, self.requests[code][2], self.requests[code][3])
+        return verification
         

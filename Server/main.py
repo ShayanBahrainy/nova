@@ -9,8 +9,6 @@ from sqlalchemy.orm import relationship
 
 from sqlalchemy.orm import DeclarativeBase
 
-from verification import Verifier, Verification
-
 import uuid
 
 from dotenv import load_dotenv
@@ -19,6 +17,7 @@ import os
 
 load_dotenv()
 
+from verification import Verifier, Verification
 
 class Base(DeclarativeBase):
   pass
@@ -118,13 +117,16 @@ class AuthenticationKey(db.Model):
         return str(uuid.uuid4())
 
 @limiter.limit("1/minute")
-@app.route("/authenticate/verify/<code>/<email>", methods=["POST"])
-def verify(code, email):
-    try:
-        code = int(code)
-    except:
+@app.route("/authenticate/verify/", methods=["POST"])
+def verify():
+    if "code" not in request.json:
         abort(400)
-    
+    if "email" not in request.json:
+        abort(400)
+
+    code = request.json["code"]
+    email = request.json["email"]
+
     result = verifier.complete_verification(code, email)
     if result.status == Verification.NOT_FOUND:
         abort(400)
@@ -137,16 +139,18 @@ def verify(code, email):
     
     if result.status == Verification.VERIFIED:
 
-        student = Student()
-        student.email = email
-        student.id = result.user_id
-        student.name = result.full_name
+        student = db.session.execute(db.select(Student).filter_by(id=result.user_id)).one_or_none()
+        if not student:
+            student = Student()
+            student.email = email
+            student.id = result.user_id
+            student.name = result.full_name
 
-        db.session.add(student)
+            db.session.add(student)
 
         key = AuthenticationKey()
         key.key = AuthenticationKey.generate_key()
-        key.student_id = student.id
+        key.student_id = result.user_id
 
         db.session.add(key)
 

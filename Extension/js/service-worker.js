@@ -144,10 +144,10 @@ function beginAuthentication() {
             fetch(request).then(async function (response) {
                 if (response.ok) {
                     const json = await response.json();
-                    resolve(response.json["email"]);
-                    chrome.storage.local.set({
+                    resolve(json["email"]);
+                    await chrome.storage.local.set({
                         lastAuthenticated: (Date.now() / 1000),
-                        lastEmail: response.json["email"],
+                        lastEmail: json["email"],
                     });
                 }
                 else {
@@ -157,6 +157,42 @@ function beginAuthentication() {
         }
     });
 
+
+    return promise;
+}
+
+function completeAuthentication(code, email) {
+    let resolve;
+    let reject;
+    const promise = new Promise((res, rej) => {resolve = res; reject = rej;})
+
+    const request = new Request(SERVER_BASE_URL + `/authenticate/verify/`, {
+        method: "POST",
+        body: JSON.stringify(
+            {
+                email: email,
+                code: code,
+            }
+        ),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+
+    fetch(request).then(
+        async function (response) {
+            const data = await response.json();
+            if (data["result"] == "Expired") {
+                reject("EXPIRED");
+            }
+            else if (data["result"] == "Verified") {
+                resolve(data["authentication_key"]);
+            }
+        },
+        async function (rejection) {
+            reject("GENERAL_FAILURE");
+        }
+    )
 
     return promise;
 }
@@ -197,5 +233,17 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             }
         );
     }
+    if (message.type == "submit_code") {
+        completeAuthentication(message.code, message.email).then(
+            function (authentication_key) {
+                chrome.storage.local.set({authenticationKey: authentication_key});
+                sendResponse({result: "AUTHENTICATED"});
+            },
+            function (error) {
+                sendResponse({result: error});
+            }
+        );
+    }
+
     return true;
 })
