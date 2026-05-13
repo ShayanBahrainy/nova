@@ -85,7 +85,6 @@ async function getAssignmentData(enrollment_pk, course_pk) {
     const json = await response.json();
     
     const scores = [];
-    console.log(json['assignments'].length)
     for (const assignmentData of json['assignments']) {
         if (assignmentData['completion_status'] != 'Complete' && assignmentData['completion_status'] != 'Not Turned In') continue;
         const score = {
@@ -131,13 +130,21 @@ function beginAuthentication() {
             const request = new Request(SERVER_BASE_URL + "/authenticate/",
                 {
                     method: "POST",
-                    data: {
+                    
+                    body: JSON.stringify({
                         content: text,
-                    }
+                    }),
+
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
                 }
             )
+            console.log("senDING reQUEST")
 
-            fetch(request).then(function (response) {
+
+            fetch(request).then(async function (response) {
+                console.log("sent reQUEST")
                 if (response.ok) {
                     const json = await response.json();
                     resolve(response.json["email"]);

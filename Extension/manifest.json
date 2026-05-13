@@ -7,7 +7,7 @@
   "action": {
     "default_popup": "html/index.html"
   },
-  "host_permissions": ["https://*.veracross.com/*"],
+  "host_permissions": ["https://*.veracross.com/*", "http://localhost/*"],
   "background": {
     "service_worker": "js/service-worker.js"
   }

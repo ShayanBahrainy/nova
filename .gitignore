@@ -1,3 +1,4 @@
 Extension/node_modules/*
 .env
 .vscode
+Server/__pycache__

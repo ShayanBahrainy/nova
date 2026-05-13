@@ -20,13 +20,13 @@ class Verification:
     EXPIRED = 3
     NOT_FOUND = 4
 
-    def __init__(self, status: int, user_id: int | None, full_name: str | None):
+    def __init__(self, status: int, user_id: int=None, full_name: str=None):
         self.status = status
         self.user_id = user_id
         self.full_name = full_name
 
 class Verifier:
-    EMAIL_REGEX = "pattern = r'^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,6}$'"
+    EMAIL_REGEX = "^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,6}$"
     def __init__(self):
         self.requests = {}
         self.email_to_code = {}

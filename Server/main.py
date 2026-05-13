@@ -1,4 +1,4 @@
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, request, make_response, jsonify, abort
 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -14,13 +14,18 @@ from verification import Verifier, Verification
 import uuid
 
 from dotenv import load_dotenv
+
+import os
+
 load_dotenv()
+
 
 class Base(DeclarativeBase):
   pass
 
 db = SQLAlchemy(model_class=Base)
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DB_URI")
 limiter = Limiter(
     get_remote_address,
     app=app,
@@ -46,7 +51,7 @@ class Enrollment(db.Model):
     student = relationship('Student', backref='enrollments')
     course = relationship('Course', backref='enrollments')
 
-    date = Column(Date, server_default=func.today())
+    date = Column(Date, server_default=func.now())
 
 class Course(db.Model):
     __tablename__ = "courses"
@@ -54,7 +59,7 @@ class Course(db.Model):
     name = Column(String(50), nullable=False)
     teacher_name = Column(String(50), nullable=False)
 
-    first_seen = Column(Date, server_default=func.today())
+    first_seen = Column(Date, server_default=func.now())
 
 class Assignment(db.Model):
     __tablename__ = "assignments"
@@ -118,11 +123,11 @@ def verify(code, email):
     try:
         code = int(code)
     except:
-        return make_response(400)
+        abort(400)
     
     result = verifier.complete_verification(code, email)
     if result.status == Verification.NOT_FOUND:
-        return make_response(400)
+        abort(400)
     
     if result.status == Verification.EXPIRED:
         response = {
@@ -153,7 +158,7 @@ def verify(code, email):
         db.session.commit()
     
         return jsonify(response)
-    return make_response(400)
+    abort(400)
 
 @limiter.limit("1/minute")
 @app.route("/authenticate/", methods=["POST"])
@@ -164,33 +169,33 @@ def authenticate():
 
     username_index = page_content.find(username_marker)
     if username_index == -1:
-        return make_response(400)
+        abort(400)
     
     end_index = page_content.find("\"", username_index + len(username_marker))
     if end_index == -1:
-        return make_response(400)
+        abort(400)
     
     email = page_content[username_index + len(username_marker) : end_index]
 
     id_marker = "user_id: "
     id_index = page_content.find(id_marker)
     if id_index == -1:
-        return make_response(400)
+        abort(400)
     
     end_index = page_content.find(",", id_index)
     if end_index == -1:
-        return make_response(400)
+        abort(400)
     
     id = page_content[id_index + len(id_marker) : end_index]
     try:
         id = int(id)
     except:
-        return make_response(400)
+        abort(400)
     
     name_marker = "full_name: \""
     name_index = page_content.find(name_marker)
     if name_index == -1:
-        return make_response(400)
+        abort(400)
     
     end_index = page_content.find("\"", name_index + len(name_marker))
 
@@ -206,44 +211,44 @@ def authenticate():
         }
         return jsonify(response)
     
-    return make_response(400)
+    abort(400)
 
 @app.route("/authenticate/revoke/", methods=["POST"])
 def revoke_authentication():
     if "authentication_key" not in request.json:
-        return make_response(400)
+        abort(400)
     
     key = request.json["authentication_key"]
     if len(key) != 36:
-        return make_response(400)
+        abort(400)
     
     key = db.session.query(AuthenticationKey).filter(AuthenticationKey.key == key).one_or_none()
 
     if key == None:
-        return make_response(400)
+        abort(400)
     
     db.session.delete(key)
 
     db.session.commit()
     
-    return make_response(200)
+    return '', 200
 
 @app.route("/upload/course_data/", methods=["POST"])
 @limiter.limit("1/minute")
 def course_upload():
     if "authentication_key" not in request.json:
-        return make_response(400)
+        abort(400)
     
     auth_key_string = request.json["authentication_key"]
     if len(auth_key_string) != 36:
-        return make_response(400)
+        abort(400)
     
     authentication_key = db.session.query(AuthenticationKey).filter(AuthenticationKey.key == auth_key_string).one_or_none()
     if not authentication_key:
         return make_response(401)
 
     if "courses" not in request.json:
-        return make_response(400)
+        abort(400)
     
     courses: list = request.json["courses"]
 
@@ -274,24 +279,24 @@ def course_upload():
         db.session.add(grade_snapshot)
     db.session.commit()
 
-    return make_response(200)
+    return '', 200
 
 @app.route("/upload/assignment_data/", methods=["POST"])
 @limiter.limit("1/minute")
 def assignment_upload():
     if "authentication_key" not in request.json:
-        return make_response(400)
+        abort(400)
     
     auth_key_string = request.json["authentication_key"]
     if len(auth_key_string) != 36:
-        return make_response(400)
+        abort(400)
     
     authentication_key = db.session.query(AuthenticationKey).filter(AuthenticationKey.key == auth_key_string).one_or_none()
     if not authentication_key:
         return make_response(401)
     
     if "scores" not in request.json:
-        return make_response(400)
+        abort(400)
     
     scores: list = request.json["scores"]
 
@@ -327,8 +332,11 @@ def assignment_upload():
         
     db.session.commit()
 
+    return '', 200
+
 
 if __name__ == "__main__":
+    db.init_app(app)
     with app.app_context():
         db.create_all()
     app.run()
