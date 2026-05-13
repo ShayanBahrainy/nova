@@ -1,3 +1,5 @@
+const SERVER_BASE_URL = "http://localhost:5000"
+
 function getUserId() {
     let resolve;
     let reject;
@@ -104,24 +106,52 @@ async function getAssignmentData(enrollment_pk, course_pk) {
     return assignments;
 }
 
-/*
-chrome.runtime.onInstalled.addListener(async function (details) {
-    getUserId().then(function(user_id) {
-        console.log(user_id);
-    }, function (reason) {
-        if (reason == "LOGIN_NEEDED") {
-            window.open("https://portals.veracross.com/oakwood/login");
+function beginAuthentication() {
+    //Rejects if not logged in to Veracross, or it fails to connect to backend
+    //Resolves to email that needs to be verified.
+    let resolve;
+    let reject;
+    const promise = new Promise((res, rej) => {resolve = res; reject = rej;})
+
+    const request = new Request("https://portals.veracross.com/oakwood/student/",
+        {
+            method: "GET",
+            credentials: "include",
+            redirect: "manual"
         }
-    })
+    );
 
-    const courses = await getCourseData();
-    const random_course = courses[Math.floor(Math.random() * courses.length)];
+    fetch(request).then(async function (response) {
+        if (!response.ok) {
+            reject("LOGIN_NEEDED")
+        }
+        else {
+            const text = await response.text();
 
-    const assignments = await getAssignmentData(random_course.enrollment_pk);
-    
-    console.log(random_course);
-    console.log(assignments);
-})*/
+            const request = new Request(SERVER_BASE_URL + "/authenticate/",
+                {
+                    method: "POST",
+                    data: {
+                        content: text,
+                    }
+                }
+            )
+
+            fetch(request).then(function (response) {
+                if (response.ok) {
+                    const json = await response.json();
+                    resolve(response.json["email"]);
+                }
+                else {
+                    console.error("Failed to begin authentication: " + response.status);
+                }
+            })
+        }
+    });
+
+
+    return promise;
+}
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (message.type == "user_id") {
@@ -138,6 +168,26 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
                 sendResponse(response);
             }
         )
+    }
+    if (message.type == "begin_authentication") {
+        beginAuthentication().then(
+            (email) => {
+                sendResponse(
+                    {
+                        result: "Success",
+                        email: email,
+                    }
+                )
+            },
+            (error_code) => {
+                sendResponse(
+                    {
+                        result: "Failure",
+                        reason: error_code,
+                    }
+                )
+            }
+        );
     }
     return true;
 })
