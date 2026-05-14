@@ -75,7 +75,7 @@ window.addEventListener("DOMContentLoaded", async function () {
             };
         })
     }
-    else if (data["lastAuthenticated"] && now - 10 * 60 < data["lastAuthenticated"]) {
+    else if (data["authenticationKey"] == undefined && data["lastAuthenticated"] && now - 10 * 60 < data["lastAuthenticated"]) {
         console.log("Resuming authentication session...")
         current_email = (await chrome.storage.local.get(["lastEmail"]))["lastEmail"];
         console.log(current_email);
