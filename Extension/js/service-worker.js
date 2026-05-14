@@ -198,13 +198,16 @@ function completeAuthentication(code, email) {
 }
 
 async function checkAuthentication() {
-    const data = chrome.storage.local.get(["authenticationKey"]);
+    const data = await chrome.storage.local.get(["authenticationKey"]);
     
     if (data["authenticationKey"] == undefined) {
         return false;
     }
 
-    getUserId().then(()=>{}, ()=>{return false});
+    let success = false;
+    getUserId().then(()=>{success = true;}, ()=>{});
+
+    return success;
     
     const request = new Request(SERVER_BASE_URL + "/authenticate/check/", {
         method: "POST",
