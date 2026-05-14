@@ -165,6 +165,17 @@ def verify():
     abort(400)
 
 @limiter.limit("1/minute")
+@app.route("/authenticate/check/", methods=["POST"])
+def check_authentication():
+    if "authentication_key" not in request.json:
+        abort(400)
+
+    authentication_key = db.session.execute(db.session.select(AuthenticationKey).filter_by(key=request.json["authentication_key"])).one_or_none()
+    if not authentication_key:
+        return False
+    return True
+
+@limiter.limit("1/minute")
 @app.route("/authenticate/", methods=["POST"])
 def authenticate():
     page_content: str = request.json["content"] 

@@ -197,6 +197,42 @@ function completeAuthentication(code, email) {
     return promise;
 }
 
+async function checkAuthentication() {
+    const data = chrome.storage.local.get(["authenticationKey"]);
+    
+    if (data["authenticationKey"] == undefined) {
+        return false;
+    }
+
+    getUserId().then(()=>{}, ()=>{return false});
+    
+    const request = new Request(SERVER_BASE_URL + "/authenticate/check/", {
+        method: "POST",
+        body: JSON.stringify(
+            {
+                authentication_key: data["authenticationKey"],
+            }
+        ),
+        headers: {
+            "Content-Type": "application/json",
+        }
+    });
+
+    const response = await fetch(request);
+
+    if (!response.ok) {
+        return false;
+    }
+
+    const data = await response.json();
+
+    if (data["result"] == "Success") {
+        return true;
+    }
+
+    return false;
+}
+
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (message.type == "user_id") {
         const response = {};
