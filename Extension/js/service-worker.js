@@ -56,6 +56,8 @@ async function getCourseData() {
     const classes = [];
 
     for (const courseData of json['courses']) {
+        //No reason to store nonacademic classes
+        if (courseData['type'] != "academic") continue;
         const course = {
             enrollment_pk: courseData['enrollment_pk'],
             class_pk: courseData['class_pk'],
@@ -198,16 +200,18 @@ function completeAuthentication(code, email) {
 }
 
 async function checkAuthentication() {
+    let resolve, reject;
+    const promise = new Promise((res, rej) => {resolve=res; reject=rej;});
+
     const data = await chrome.storage.local.get(["authenticationKey"]);
     
     if (data["authenticationKey"] == undefined) {
-        return false;
+        resolve(false);
     }
 
-    let success = false;
-    getUserId().then(()=>{success = true;}, ()=>{});
+    getUserId().then(()=>{resolve(true)}, ()=>{resolve(false)});
 
-    return success;
+    return promise;
     
     const request = new Request(SERVER_BASE_URL + "/authenticate/check/", {
         method: "POST",
@@ -224,16 +228,69 @@ async function checkAuthentication() {
     const response = await fetch(request);
 
     if (!response.ok) {
+        console.log(2)
+
         return false;
     }
 
-    const data = await response.json();
+    data = await response.json();
 
     if (data["result"] == "Success") {
         return true;
     }
+    console.log(3)
 
     return false;
+}
+
+async function uploadCourseData() {
+    const data = await chrome.storage.local.get(["authenticationKey"]);
+    if (data["authenticationKey"] == undefined) return;
+
+    const request = new Request(SERVER_BASE_URL + "/upload/course_data/", {
+        method: "POST",
+        body: JSON.stringify({
+            authentication_key: data["authenticationKey"],
+            courses: await getCourseData(),
+        }),
+
+        headers: {
+            "Content-Type": "application/json"
+        }
+
+    });
+
+    fetch(request).then(async function (response) {
+        console.log(await response.text());
+    })
+}
+
+async function sync() {
+    console.log(await checkAuthentication());
+    const auth_status = await checkAuthentication();
+    if (!auth_status) return;
+
+    console.log("before upload")
+
+    uploadCourseData();
+
+    console.log("uploaded")
+
+    chrome.alarms.create("syncAlarm", {
+        delayInMinutes: currentSyncPeriod(),
+    });
+}
+
+function currentSyncPeriod() {
+    const time = new Date();
+
+    //Update every 30 minutes on weekends
+    if (time.getDay() == 0 || time.getDay() == 6) return 30;
+
+    if (time.getHours() < 8) return 30;
+    if (time.getHours() > 15) return 30;
+
+    return 5;
 }
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
@@ -286,3 +343,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
     return true;
 })
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+    if (alarm.name == "syncAlarm") {
+        sync();
+    }
+})
+
+//Sync immediately on load, and then it will create an alarm for itself
+sync();

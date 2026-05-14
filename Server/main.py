@@ -289,7 +289,7 @@ def course_upload():
         grade_snapshot = GradeSnapshot()
         grade_snapshot.enrollment_id = enrollment.id
         grade_snapshot.letter = course_data["letter_grade"]
-        grade_snapshot.numeric = course_data["ptd_grade"]
+        grade_snapshot.numeric = course_data["numeric_grade"]
 
         db.session.add(grade_snapshot)
     db.session.commit()
