@@ -71,32 +71,18 @@ body {
     position: absolute;
     left: 5%;
     top: 5%;
-    width: 44%;
-    height: 44%;
-    background-color: white;
-    border-style: solid;
-    border-width: 5px;
-    border-color: rgb(0, 0, 0);
-    border-radius: 15%;
-    display: flex;
-    align-items: center; 
-    justify-content: center;
-    font-size: 3em;
-    transform: translateY(0px);
-    transition: ease transform 0.3s;
-
-}
-
-.my-data:hover {
-    transform: translateY(-15px);
 }
 
 .social {
     position: absolute;
     right: 5%;
     bottom: 5%;
-    width: 44%;
-    height: 44%;
+}
+
+.menu-button {
+    width: 43%;
+    height: 43%;
+
     background-color: white;
     border-style: solid;
     border-width: 5px;
@@ -110,14 +96,10 @@ body {
     transition: ease transform 0.3s;
 }
 
-.social:hover {
+.menu-button:hover {
     transform: translateY(-15px);
 }
 
-.personal-icon {
-    width: 100px;
-}
-
-.social-icon {
+.icon {
     width: 100px;
 }
