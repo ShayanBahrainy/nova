@@ -74,7 +74,7 @@ async function getCourseData() {
 
 }
 
-async function getAssignmentData(enrollment_pk, course_pk) {
+async function getAssignmentData(enrollment_pk, class_pk) {
     const request = new Request(`https://portals-embed.veracross.com/oakwood/student/enrollment/${enrollment_pk}/assignments`,
         {
             method: "GET",
@@ -98,13 +98,13 @@ async function getAssignmentData(enrollment_pk, course_pk) {
             maximum_score: assignmentData['maximum_score'],
             raw_score: assignmentData['raw_score'] == '' ? '0' : assignmentData['raw_score'],
             assignment_id: assignmentData['id'],
-            course_id: course_pk
+            course_id: class_pk
         };
 
-        assignments.push(assignment);
+        scores.push(score);
     }
 
-    return assignments;
+    return scores;
 }
 
 function beginAuthentication() {
@@ -243,7 +243,7 @@ async function checkAuthentication() {
     return false;
 }
 
-async function uploadCourseData() {
+async function uploadCourseData(course_data) {
     const data = await chrome.storage.local.get(["authenticationKey"]);
     if (data["authenticationKey"] == undefined) return;
 
@@ -251,7 +251,34 @@ async function uploadCourseData() {
         method: "POST",
         body: JSON.stringify({
             authentication_key: data["authenticationKey"],
-            courses: await getCourseData(),
+            courses: course_data,
+        }),
+
+        headers: {
+            "Content-Type": "application/json"
+        }
+
+    });
+
+    fetch(request).then(async function (response) {
+        console.log(await response.text());
+    })
+}
+
+async function uploadAssignmentData(courses) {
+    const data = await chrome.storage.local.get(["authenticationKey"]);
+    if (data["authenticationKey"] == undefined) return;
+
+    const scores = [];
+    for (let course of courses) {
+        scores.push(... await getAssignmentData(course["enrollment_pk"], course["class_pk"]));
+    }
+
+    const request = new Request(SERVER_BASE_URL + "/upload/assignment_data/", {
+        method: "POST",
+        body: JSON.stringify({
+            authentication_key: data["authenticationKey"],
+            scores: scores,
         }),
 
         headers: {
@@ -272,7 +299,9 @@ async function sync() {
 
     console.log("before upload")
 
-    uploadCourseData();
+    const course_data = await getCourseData();
+    uploadCourseData(course_data);
+    uploadAssignmentData(course_data);
 
     console.log("uploaded")
 

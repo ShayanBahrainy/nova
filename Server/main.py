@@ -89,7 +89,7 @@ class Score(db.Model):
     def points_possible(self):
         return self.assignment.points_possible
     
-    raw_score = Column(Integer, nullable=False)
+    raw_score = Column(Float, nullable=False)
 
 class GradeSnapshot(db.Model):
     __tablename__ = "grade_snapshots"
@@ -249,7 +249,7 @@ def revoke_authentication():
     return '', 200
 
 @app.route("/upload/course_data/", methods=["POST"])
-@limiter.limit("1/minute")
+#@limiter.limit("1/minute")
 def course_upload():
     if "authentication_key" not in request.json:
         abort(400)
@@ -297,7 +297,7 @@ def course_upload():
     return '', 200
 
 @app.route("/upload/assignment_data/", methods=["POST"])
-@limiter.limit("1/minute")
+#@limiter.limit("1/minute")
 def assignment_upload():
     if "authentication_key" not in request.json:
         abort(400)
@@ -314,14 +314,13 @@ def assignment_upload():
         abort(400)
     
     scores: list = request.json["scores"]
-
     for score_data in scores:
         assignment = db.session.query(Assignment).filter(Assignment.id == score_data["assignment_id"]).one_or_none()
         if not assignment:
             assignment = Assignment()
             assignment.id = score_data["assignment_id"]
             assignment.course_id  = score_data["course_id"]
-            assignment.date = score_data["_date"]
+            assignment.date = score_data["date"]
             assignment.description = score_data["assignment_description"]
             assignment.notes = score_data["assignment_notes"]
             assignment.points_possible = score_data["points_possible"]
@@ -343,7 +342,7 @@ def assignment_upload():
         assignment.description = score_data["assignment_description"]
         assignment.notes = score_data["assignment_notes"]
         assignment.points_possible = score_data["points_possible"]
-        assignment.date = score_data["_date"]
+        assignment.date = score_data["date"]
         
     db.session.commit()
 
