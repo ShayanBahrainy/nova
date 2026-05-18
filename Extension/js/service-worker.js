@@ -13,7 +13,8 @@ function getUserId() {
         {
             method: "GET",
             credentials: "include",
-            redirect: "manual"
+            redirect: "manual",
+            cache: "no-store",
         }
     );
 
@@ -45,7 +46,8 @@ async function getCourseData() {
     const request = new Request("https://portals.veracross.com/oakwood/student/component/ClassListStudent/1308/load_data",
         {
             method: "GET",
-            credentials: "include"
+            credentials: "include",
+            cache: "no-store",
         }
     );
 
@@ -78,7 +80,8 @@ async function getAssignmentData(enrollment_pk, class_pk) {
     const request = new Request(`https://portals-embed.veracross.com/oakwood/student/enrollment/${enrollment_pk}/assignments`,
         {
             method: "GET",
-            credentials: "include"
+            credentials: "include",
+            cache: "no-store",
         }
     );
 
@@ -118,7 +121,8 @@ function beginAuthentication() {
         {
             method: "GET",
             credentials: "include",
-            redirect: "manual"
+            redirect: "manual",
+            cache: "no-store",
         }
     );
 
@@ -207,6 +211,7 @@ async function checkAuthentication() {
     
     if (data["authenticationKey"] == undefined) {
         resolve(false);
+        return promise;
     }
 
     getUserId().then(()=>{resolve(true)}, ()=>{resolve(false)});
@@ -228,8 +233,6 @@ async function checkAuthentication() {
     const response = await fetch(request);
 
     if (!response.ok) {
-        console.log(2)
-
         return false;
     }
 
@@ -238,14 +241,14 @@ async function checkAuthentication() {
     if (data["result"] == "Success") {
         return true;
     }
-    console.log(3)
 
     return false;
 }
 
 async function uploadCourseData(course_data) {
-    const data = await chrome.storage.local.get(["authenticationKey"]);
-    if (data["authenticationKey"] == undefined) return;
+    if (!await checkAuthentication()) return;
+
+    const data = chrome.storage.local.get(["authenticationKey"]);
 
     const request = new Request(SERVER_BASE_URL + "/upload/course_data/", {
         method: "POST",
@@ -260,14 +263,11 @@ async function uploadCourseData(course_data) {
 
     });
 
-    fetch(request).then(async function (response) {
-        console.log(await response.text());
-    })
+    fetch(request);
 }
 
 async function uploadAssignmentData(courses) {
-    const data = await chrome.storage.local.get(["authenticationKey"]);
-    if (data["authenticationKey"] == undefined) return;
+    if (!await checkAuthentication()) return;
 
     const scores = [];
     for (let course of courses) {
@@ -287,23 +287,17 @@ async function uploadAssignmentData(courses) {
 
     });
 
-    fetch(request).then(async function (response) {
-        console.log(await response.text());
-    })
+    fetch(request);
 }
 
 async function sync() {
-    console.log(await checkAuthentication());
     const auth_status = await checkAuthentication();
     if (!auth_status) return;
-
-    console.log("before upload")
 
     const course_data = await getCourseData();
     uploadCourseData(course_data);
     uploadAssignmentData(course_data);
 
-    console.log("uploaded")
 
     chrome.alarms.create("syncAlarm", {
         delayInMinutes: currentSyncPeriod(),
@@ -337,6 +331,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
                 sendResponse(response);
             }
         )
+    }
+    if (message.type == "check_authentication") {
+        checkAuthentication().then( (response) => {
+            sendResponse({result: response})
+    });
     }
     if (message.type == "begin_authentication") {
         beginAuthentication().then(

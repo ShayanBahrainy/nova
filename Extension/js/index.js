@@ -23,6 +23,17 @@ function submitEmailCode() {
 }
 
 window.addEventListener("DOMContentLoaded", async function () {
+    chrome.runtime.sendMessage({type:"check_authentication"}, (response) => {
+        console.log(response.result);
+        if (response.result) {
+            document.getElementById("front-menu").classList.toggle("invisible");
+        }
+        else {
+            document.getElementById("login-button").classList.toggle("invisible");
+        }
+    })
+
+    /*
     chrome.runtime.sendMessage({type:"user_id"}, (response) => {
         if (response["result"] == "Success") {
             console.log("User id: " + response["user_id"]);
@@ -35,7 +46,7 @@ window.addEventListener("DOMContentLoaded", async function () {
                 ;
             }
         }
-    });
+    });*/
 
     document.getElementById("login-button").addEventListener("click", function () {
         chrome.tabs.create({url: "https://portals.veracross.com/oakwood/login/"});
@@ -68,7 +79,8 @@ window.addEventListener("DOMContentLoaded", async function () {
             if (response.result == "Success") {
                 current_email = response.email;
                 document.getElementById("email-code-label").innerText = `Please enter the code sent to ${current_email}`;
-                document.getElementById("verify-code").classList.toggle("invisible");
+                document.getElementById("verify-code").classList.toggle("invisible"); //Turn on verify code menu
+                document.getElementById("login-button").classList.toggle("invisible"); //Turn off "Login With Veracross" screen
             }
             else if (response.result == "Failure" && response.reason == "LOGIN_NEEDED") {
                 console.error("Authentication attempted before Veracross login!");
@@ -78,7 +90,6 @@ window.addEventListener("DOMContentLoaded", async function () {
     else if (data["authenticationKey"] == undefined && data["lastAuthenticated"] && now - 10 * 60 < data["lastAuthenticated"]) {
         console.log("Resuming authentication session...")
         current_email = (await chrome.storage.local.get(["lastEmail"]))["lastEmail"];
-        console.log(current_email);
         document.getElementById("email-code-label").innerText = `Please enter the code sent to ${current_email}`;
         document.getElementById("verify-code").classList.toggle("invisible");
     }
