@@ -248,8 +248,7 @@ async function checkAuthentication() {
 async function uploadCourseData(course_data) {
     if (!await checkAuthentication()) return;
 
-    const data = chrome.storage.local.get(["authenticationKey"]);
-
+    const data = await chrome.storage.local.get(["authenticationKey"]);
     const request = new Request(SERVER_BASE_URL + "/upload/course_data/", {
         method: "POST",
         body: JSON.stringify({
@@ -268,6 +267,8 @@ async function uploadCourseData(course_data) {
 
 async function uploadAssignmentData(courses) {
     if (!await checkAuthentication()) return;
+
+    const data = await chrome.storage.local.get(["authenticationKey"])
 
     const scores = [];
     for (let course of courses) {
