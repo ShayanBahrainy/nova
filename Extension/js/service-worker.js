@@ -11,7 +11,7 @@ function getUserId() {
 
     const request = new Request("https://portals.veracross.com/oakwood/student/",
         {
-            method: "GET",
+            method: "h",
             credentials: "include",
             redirect: "manual",
             cache: "no-store",
@@ -214,11 +214,25 @@ async function checkAuthentication() {
         return promise;
     }
 
-    getUserId().then(()=>{resolve(true)}, ()=>{resolve(false)});
+    const request = new Request("https://portals.veracross.com/oakwood/student/student/overview", {
+        method: "HEAD",
+        credentials: "include",
+        redirect: "manual",
+        cache: "no-store",
+    });
+
+    try {
+        fetch(request).then((response)=>{
+            if (response.ok) resolve(true);
+            else resolve(false);
+        })
+    }
+    catch {};
+
 
     return promise;
     
-    const request = new Request(SERVER_BASE_URL + "/authenticate/check/", {
+    request = new Request(SERVER_BASE_URL + "/authenticate/check/", {
         method: "POST",
         body: JSON.stringify(
             {
