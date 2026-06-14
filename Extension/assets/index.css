@@ -1,7 +1,9 @@
 :root {
-    --first-color: #B7C3F3;
-    --second-color: #0c7c59;
-    --third-color: #7D2E68;
+    --first-color: #A3CEF1;
+    --second-color: #6096BA;
+    --third-color: #274C77;
+    --base-color: #E7ECEF;
+    --accent-color: #D8315B;
 }
 
 
@@ -91,8 +93,8 @@ body {
 
 .my-data {
     position: absolute;
-    left: 5%;
-    top: 5%;
+    left: 20px;
+    top: 68px;
     
     color: var(--second-color);
     border-color: var(--second-color);
@@ -100,35 +102,48 @@ body {
 
 .social {
     position: absolute;
-    right: 5%;
-    bottom: 5%;
+    left: 175px;
+    top: 315px;
 
     color: var(--third-color);
     border-color: var(--third-color);
 }
 
+.golf {
+    position: absolute;
+    left: 330px;
+    top: 68px;
+
+    color: var(--first-color);
+    border-color: var(--first-color);
+}
+
 .menu-button {
-    width: 43%;
-    height: 43%;
+    width: 200px;
+    height: 200px;
 
 
     border-style: solid;
     border-width: 5px;
-    border-radius: 15%;
+    border-radius: 10%;
     display: flex;
     align-items: center; 
     justify-content: center;
     font-size: 3em;
     
-    animation: 4s counter-spin linear;
+    animation: 3s counter-spin linear;
     animation-iteration-count: 1;
 
     transition: 0.75s;
     background-color: #FFFFFF;
 }
 
-.menu-button:hover {
+.my-data:hover, .golf:hover {
     transform: translateY(-15px);
+}
+
+.social:hover {
+    transform: translateY(-15px) translateX(50%);
 }
 
 .icon {
@@ -136,8 +151,7 @@ body {
 }
 
 .front-menu {
-    animation: 3s spin linear; 
-    animation-iteration-count: 1; 
+    background-color: var(--base-color);
 
     width: 100%;
     height: 100%;
@@ -153,7 +167,7 @@ body {
 }
 @keyframes counter-spin { 
     to {
-        transform: rotate(-720deg); 
+        transform: rotate(-360deg); 
     } 
 }
 
