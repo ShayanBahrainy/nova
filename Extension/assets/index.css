@@ -21,8 +21,22 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: 'DMSans';
+    src: url('../assets/DMSans.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'DMSans';
+    src: url('../assets/DMSans-Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
 body {
-    font-family: "ElsieSwashCaps", "Commissioner", "Times New Roman";
+    font-family: "DMSans", "Commissioner", "Times New Roman";
     width: 550px;
     height: 550px;
     background-color: var(--first-color);
