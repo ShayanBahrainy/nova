@@ -4,7 +4,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, Integer, Date, String, ForeignKey, Float, DateTime, func, UniqueConstraint
+from sqlalchemy import Column, Integer, Date, String, ForeignKey, Float, DateTime, func, UniqueConstraint, select, union
 from sqlalchemy.orm import relationship
 
 from sqlalchemy.orm import DeclarativeBase
@@ -116,6 +116,21 @@ class AuthenticationKey(db.Model):
     def generate_key() -> str:
         return str(uuid.uuid4())
 
+def check_authentication(func: function) -> function:
+    def wrapped(*args, **kargs):
+        if "authentication_key" not in request.json:
+            abort(400)
+
+        if len(request.json["authentication_key"]) != 36:
+            abort(400)
+
+        authentication_key = db.session.execute(select(AuthenticationKey).where(AuthenticationKey.key == request.json["authentication_key"])).one_or_none()
+        if not authentication_key:
+            abort(401)
+
+        return func(authentication_key, *args, **kargs)
+    return wrapped
+
 @limiter.limit("1/minute")
 @app.route("/authenticate/verify/", methods=["POST"])
 def verify():
@@ -166,9 +181,12 @@ def verify():
 
 @limiter.limit("1/minute")
 @app.route("/authenticate/check/", methods=["POST"])
-def check_authentication():
+def authentication_check():
     if "authentication_key" not in request.json:
         abort(400)
+
+    if len(request.json["authentication_key"]) != 36:
+        return False
 
     authentication_key = db.session.execute(db.session.select(AuthenticationKey).filter_by(key=request.json["authentication_key"])).one_or_none()
     if not authentication_key:
@@ -250,18 +268,8 @@ def revoke_authentication():
 
 @app.route("/upload/course_data/", methods=["POST"])
 #@limiter.limit("1/minute")
-def course_upload():
-    if "authentication_key" not in request.json:
-        abort(400)
-    
-    auth_key_string = request.json["authentication_key"]
-    if len(auth_key_string) != 36:
-        abort(400)
-    
-    authentication_key = db.session.query(AuthenticationKey).filter(AuthenticationKey.key == auth_key_string).one_or_none()
-    if not authentication_key:
-        return make_response(401)
-
+@check_authentication
+def course_upload(authentication_key: AuthenticationKey):
     if "courses" not in request.json:
         abort(400)
     
@@ -297,19 +305,9 @@ def course_upload():
     return '', 200
 
 @app.route("/upload/assignment_data/", methods=["POST"])
-#@limiter.limit("1/minute")
-def assignment_upload():
-    if "authentication_key" not in request.json:
-        abort(400)
-    
-    auth_key_string = request.json["authentication_key"]
-    if len(auth_key_string) != 36:
-        abort(400)
-    
-    authentication_key = db.session.query(AuthenticationKey).filter(AuthenticationKey.key == auth_key_string).one_or_none()
-    if not authentication_key:
-        return make_response(401)
-    
+@limiter.limit("1/minute")
+@check_authentication
+def assignment_upload(authentication_key: AuthenticationKey):
     if "scores" not in request.json:
         abort(400)
     
