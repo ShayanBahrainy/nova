@@ -131,6 +131,32 @@ def check_authentication(func: function) -> function:
         return func(authentication_key, *args, **kargs)
     return wrapped
 
+def numeric_to_letter_grade(numeric: float) -> str:
+    numeric = round(numeric)
+    if numeric >= 93:
+        return 'A'
+    if numeric >= 90:
+        return 'A-'
+    if numeric >= 87:
+        return 'B+'
+    if numeric >= 83:
+        return 'B'
+    if numeric >= 80:
+        return 'B-'
+    if numeric >= 77:
+        return 'C+'
+    if numeric >= 73:
+        return 'C'
+    if numeric >= 70:
+        return 'C-'
+    if numeric >= 67:
+        return 'D+'
+    if numeric >= 63:
+        return 'D'
+    if numeric >= 60:
+        return 'D-'
+    return 'F'
+
 @limiter.limit("1/minute")
 @app.route("/authenticate/verify/", methods=["POST"])
 def verify():
@@ -345,6 +371,59 @@ def assignment_upload(authentication_key: AuthenticationKey):
     db.session.commit()
 
     return '', 200
+
+
+@app.route("/search/course/<search_query>/")
+@limiter.limit("5/minute")
+@check_authentication
+def course_search(authentication_key: AuthenticationKey, search_query: str):
+    name_query = select(Course).where(Course.name.ilike(f'%{search_query}%'))
+    teacher_query = select(Course).where(Course.teacher_name.ilike(f'%{search_query}%'))
+
+    query = union(name_query, teacher_query)
+
+    courses: list[Course] = db.session.execute(query).all()
+
+    courses_data = []
+    for course in courses:
+        courses_data.append(course_info(None, course.id))
+
+    return jsonify({"courses": courses_data})
+    
+
+@app.route("/course/<course_id>/")
+@check_authentication
+def course_info(authentication_key: AuthenticationKey, course_id: str):
+    try:
+        course_id = int(course_id)
+    except:
+        abort(400)
+    
+    query = select(Course).where(Course.id == course_id)
+
+    course: Course = db.session.execute(query).one_or_none()
+    if not course:
+        abort(404)
+
+    course_data = {}
+
+    course_data["name"] = course.name
+    course_data["id"] = course.id
+    course_data["teacher_name"] = course.teacher_name
+
+    subq = select(GradeSnapshot.numeric).distinct(GradeSnapshot.enrollment_id).where(GradeSnapshot.enrollment.course_id == course.id).order_by(GradeSnapshot.enrollment_id, GradeSnapshot.time.desc()).subquery()
+    
+    query = select(func.avg(subq.c.numeric), func.count()).select_from(subq)
+
+    numeric, sample_count = db.session.execute(query).one()
+
+    course_data["numeric"] = numeric or 0.0
+
+    course_data["sample_count"] = sample_count or 0
+
+    course_data["letter"] = numeric_to_letter_grade(numeric or 0.0)
+
+    return jsonify({"data": course_data})
 
 
 if __name__ == "__main__":
