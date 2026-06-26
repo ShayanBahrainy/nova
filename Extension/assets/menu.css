@@ -1,0 +1,53 @@
+.classes-button {
+    position: absolute;
+    left: 20px;
+    top: 68px;
+    
+    color: var(--accent-color);
+    background-color: var(--third-color);
+}
+
+.assignments-button {
+    position: absolute;
+    left: 175px;
+    top: 315px;
+
+    color: var(--accent-color);
+    background-color: var(--third-color);
+}
+
+.golf-button {
+    position: absolute;
+    left: 330px;
+    top: 68px;
+
+    background-color: var(--third-color);
+    color: var(--accent-color);
+}
+
+.menu-button {
+    width: 200px;
+    height: 200px;
+
+
+    border-radius: 10%;
+
+    display: flex;
+    align-items: center; 
+    justify-content: center;
+    font-size: 3em;
+}
+
+.icon {
+    width: 150px;
+}
+
+.menu {
+    background-color: var(--first-color);
+
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}

@@ -22,9 +22,16 @@ function submitEmailCode() {
 
 }
 
+function openPage(page) {
+    chrome.runtime.sendMessage({type:"open_page", page:page}, function (response) {
+        if (response["result"] == "close") {
+            window.close();
+        }
+    })
+}
+
 window.addEventListener("DOMContentLoaded", async function () {
     chrome.runtime.sendMessage({type:"check_authentication"}, (response) => {
-        console.log(response.result);
         if (response.result) {
             document.getElementById("front-menu").classList.toggle("invisible");
         }
@@ -33,23 +40,14 @@ window.addEventListener("DOMContentLoaded", async function () {
         }
     })
 
-    /*
-    chrome.runtime.sendMessage({type:"user_id"}, (response) => {
-        if (response["result"] == "Success") {
-            console.log("User id: " + response["user_id"]);
-        }
-        else if (response["result"] == "Failure") {
-            if (response["reason"] == "LOGIN_NEEDED") {
-                document.getElementById('login-button').classList.toggle('invisible');
-            }
-            else {
-                ;
-            }
-        }
-    });*/
-
     document.getElementById("login-button").addEventListener("click", function () {
         chrome.tabs.create({url: "https://portals.veracross.com/oakwood/login/"});
+    })
+
+    document.getElementById("classes-button").addEventListener("click", function () {
+        document.getElementById("front-menu").classList.toggle("invisible");
+        document.getElementById("classes-screen").classList.toggle("invisible");
+        openPage("html/classes.html");
     })
 
     for (const element of document.getElementsByClassName("digit")) {

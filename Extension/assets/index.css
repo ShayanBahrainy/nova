@@ -6,14 +6,6 @@
     --accent-color: #D8315B;
 }
 
-
-@font-face {
-    font-family: 'ElsieSwashCaps';
-    src: url('../assets/ElsieSwashCaps.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-
 @font-face {
     font-family: 'Commissioner';
     src: url('../assets/commissioner.ttf') format('truetype');
@@ -42,119 +34,7 @@ body {
     background-color: var(--first-color);
 }
 
-#login-button {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-}
-
-#login-label {
-    font-size: 2.5em;
-    max-width: fit-content;
-}
-
-#email-code-label {
-    white-space: nowrap;
-}
-
-#verify-code {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-}
-
-#verify-code-field {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-}
-
-.digit {
-    width: 1em;
-    border-top: none;
-    border-left: none;
-    border-right: none;
-}
-
-.digit:focus {
-    outline: none;
-}
-
-#veracross-logo {
-    display: inline;
-}
-
 .invisible {
     display: none;
     visibility: collapse;
-}
-
-#login-button:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.my-data {
-    position: absolute;
-    left: 20px;
-    top: 68px;
-    
-    color: var(--accent-color);
-    background-color: var(--third-color);
-}
-
-.social {
-    position: absolute;
-    left: 175px;
-    top: 315px;
-
-    color: var(--accent-color);
-    background-color: var(--second-color);
-}
-
-.golf {
-    position: absolute;
-    left: 330px;
-    top: 68px;
-
-    background-color: var(--first-color);
-    color: var(--accent-color);
-}
-
-.menu-button {
-    width: 200px;
-    height: 200px;
-
-
-    border-radius: 10%;
-
-    display: flex;
-    align-items: center; 
-    justify-content: center;
-    font-size: 3em;
-}
-
-.icon {
-    width: 150px;
-}
-
-.front-menu {
-    background-color: var(--base-color);
-
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
 }

@@ -331,6 +331,12 @@ function currentSyncPeriod() {
     return 5;
 }
 
+function openPage(page) {
+    chrome.action.setPopup({popup:page})
+    chrome.action.openPopup()
+    chrome.action.setPopup({popup:"html/index.html"})
+}
+
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (message.type == "user_id") {
         const response = {};
@@ -372,6 +378,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             }
         );
     }
+
     if (message.type == "submit_code") {
         completeAuthentication(message.code, message.email).then(
             function (authentication_key) {
@@ -382,6 +389,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
                 sendResponse({result: error});
             }
         );
+    }
+
+    if (message.type == "open_page") {
+        sendResponse({result: "close"})
+        setTimeout(openPage, 500, message.page);
     }
 
     return true;
